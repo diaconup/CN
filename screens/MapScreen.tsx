@@ -1,9 +1,27 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 
 const MapScreen = ({ route }: any) => {
   const { latitude, longitude, itemName } = route.params;
+  const [coords, setCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (latitude && longitude) {
+      setCoords({ latitude, longitude });
+    }
+  }, [latitude, longitude]);
+
+  if (!coords) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading map...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
