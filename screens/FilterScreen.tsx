@@ -10,7 +10,7 @@ import {
 import * as Location from 'expo-location';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/constants/types';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 type FilterScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -35,6 +35,12 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
     })();
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      setSelectedOption(null);
+    }, [])
+  );
+
   const getCurrentLocation = async () => {
     if (!hasPermission) {
       Alert.alert(
@@ -54,6 +60,7 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
         console.log('Current location:', latitude, longitude);
 
         navigation.navigate('Map', { latitude, longitude, itemName });
+        setSelectedOption(null);
       } else {
         Alert.alert('Location Error', 'Failed to retrieve valid coordinates.');
       }
@@ -72,10 +79,12 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
       Alert.alert('No option selected', 'Please select an option first.');
       return;
     }
+
     if (selectedOption === 'Current Position') {
       getCurrentLocation();
     } else {
       alert(`Selected option: ${selectedOption}`);
+      setSelectedOption(null);
     }
   };
 
