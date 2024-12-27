@@ -26,28 +26,28 @@ const HomeScreen: React.FC = () => {
 
   const data = [
     {
-      id: '1',
+      id: '11',
       name: 'Benzina Standard',
       logo: require('../assets/images/benzina.png'),
     },
     {
-      id: '2',
+      id: '12',
       name: 'Benzina Premium',
       logo: require('../assets/images/benzina_premium.png'),
     },
     {
-      id: '3',
+      id: '21',
       name: 'Motorina Standard',
       logo: require('../assets/images/motorina.png'),
     },
     {
-      id: '4',
+      id: '22',
       name: 'Motorina Premium',
       logo: require('../assets/images/motorina_premium.png'),
     },
-    { id: '5', name: 'GPL', logo: require('../assets/images//gpl.png') },
+    { id: '31', name: 'GPL', logo: require('../assets/images//gpl.png') },
     {
-      id: '6',
+      id: '41',
       name: 'Incarcare electrica',
       logo: require('../assets/images/incarcare_electrica.png'),
     },
@@ -72,7 +72,7 @@ const HomeScreen: React.FC = () => {
       <StatusBar
         barStyle="light-content"
         translucent={true}
-        backgroundColor="#1b6498"
+        backgroundColor="#0b2b41"
       />
       <View style={styles.header}>
         <Text style={styles.headerText}>Alege carburantul</Text>

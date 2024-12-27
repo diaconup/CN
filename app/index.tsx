@@ -5,6 +5,7 @@ import LoginScreen from '../screens/LoginScreen';
 import { RootStackParamList } from '../constants/types';
 import HomeScreen from '@/screens/HomeScreen';
 import FilterScreen from '@/screens/FilterScreen';
+import MapScreen from '@/screens/MapScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -38,6 +39,20 @@ const Index: React.FC = () => {
       <Stack.Screen
         name="Filter"
         component={FilterScreen}
+        options={{
+          headerShown: false,
+          headerTitle: 'Filtre locatie',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#13476c',
+            height: '45%',
+          },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen
+        name="Map"
+        component={MapScreen}
         options={{
           headerShown: false,
           headerTitle: 'Filtre locatie',

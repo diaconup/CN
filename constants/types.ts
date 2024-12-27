@@ -3,4 +3,5 @@ export type RootStackParamList = {
   Register: undefined;
   Home: undefined;
   Filter: { itemName: string };
+  Map: { latitude: number; longitude: number; itemName: string };
 };
