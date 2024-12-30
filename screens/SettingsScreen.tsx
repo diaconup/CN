@@ -25,6 +25,7 @@ const SettingsScreen: React.FC = () => {
   const handleLogout = async () => {
     try {
       await auth.signOut();
+      navigation.replace('Login');
       Alert.alert('Logged out', 'You have been logged out successfully.');
     } catch (error) {
       Alert.alert('Error', 'Failed to log out. Please try again.');

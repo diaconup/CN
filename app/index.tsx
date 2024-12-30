@@ -28,7 +28,7 @@ const Index: React.FC = () => {
   }
 
   return (
-    <Stack.Navigator initialRouteName="Login">
+    <Stack.Navigator initialRouteName={isLoggedIn ? 'Home' : 'Login'}>
       <Stack.Screen
         name="Login"
         component={LoginScreen}
