@@ -6,11 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/constants/types';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Slider from '@react-native-community/slider';
 
 type FilterScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -22,11 +24,13 @@ type Props = {
 };
 
 const FilterScreen: React.FC<Props> = ({ route }: any) => {
-  const { itemName } = route.params;
+  const { itemId } = route.params;
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const options = ['Current Position', 'Pin on Map', 'City'];
+  const options = ['Poziție curentă', 'Pin pe hartă', 'Oraș'];
   const [hasPermission, setHasPermission] = useState(false);
   const navigation = useNavigation();
+  const [radius, setRadius] = useState(1);
+  const [cityName, setCityName] = useState<string>('');
 
   useEffect(() => {
     (async () => {
@@ -38,6 +42,7 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
   useFocusEffect(
     React.useCallback(() => {
       setSelectedOption(null);
+      setCityName('');
     }, [])
   );
 
@@ -57,10 +62,51 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
       const { latitude, longitude } = location.coords;
 
       if (latitude && longitude) {
-        console.log('Current location:', latitude, longitude);
+        console.log('Current location:', latitude, longitude, radius);
 
-        navigation.navigate('Map', { latitude, longitude, itemName });
-        setSelectedOption(null);
+        const url = `https://monitorulpreturilor.info/pmonsvc/Gas/GetGasItemsByLatLon?lon=${longitude}&lat=${latitude}&buffer=${
+          radius * 1000
+        }&CSVGasCatalogProductIds=${itemId}&OrderBy=dist`;
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          const markers = (data.Stations || []).map((station) => {
+            const { Lat, Lon } = station.addr.location;
+            const stationName = station.network.name;
+            const product = (data.Products || []).find(
+              (p) => p.stationid === station.id
+            );
+            const price = product ? product.price : 'N/A';
+            const logo = station.network.logo.logouri;
+
+            return {
+              latitude: Lat,
+              longitude: Lon,
+              title: stationName,
+              price,
+              logo,
+            };
+          });
+
+          console.log('Markers Data:', markers);
+
+          navigation.navigate('Map', { latitude, longitude, markers, radius });
+        } else {
+          console.error(
+            'Failed to fetch data:',
+            response.status,
+            response.statusText
+          );
+          Alert.alert('Error', 'Failed to fetch data from the server.');
+        }
       } else {
         Alert.alert('Location Error', 'Failed to retrieve valid coordinates.');
       }
@@ -70,8 +116,103 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
     }
   };
 
+  const getCurrentTown = async () => {
+    if (!cityName.trim()) {
+      Alert.alert('No City Entered', 'Please enter a city name.');
+      return;
+    }
+
+    try {
+      const uatUrl = `https://monitorulpreturilor.info/pmonsvc/Gas/GetUATByName?uatname=${encodeURIComponent(
+        cityName
+      )}`;
+      const uatResponse = await fetch(uatUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!uatResponse.ok) {
+        console.error(
+          'Failed to fetch UAT data:',
+          uatResponse.status,
+          uatResponse.statusText
+        );
+        Alert.alert('Error', 'Failed to fetch data for the city.');
+        return;
+      }
+
+      const uatData = await uatResponse.json();
+      const uatItem = uatData.Items?.[0];
+
+      if (!uatItem || !uatItem.id) {
+        Alert.alert(
+          'City Not Found',
+          'Could not find data for the entered city.'
+        );
+        return;
+      }
+
+      const uatId = uatItem.id;
+
+      const gasUrl = `https://monitorulpreturilor.info/pmonsvc/Gas/GetGasItemsByUat?UatId=${uatId}&CSVGasCatalogProductIds=${itemId}&OrderBy=dist`;
+      const gasResponse = await fetch(gasUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!gasResponse.ok) {
+        console.error(
+          'Failed to fetch gas station data:',
+          gasResponse.status,
+          gasResponse.statusText
+        );
+        Alert.alert('Error', 'Failed to fetch gas station data.');
+        return;
+      }
+
+      const gasData = await gasResponse.json();
+
+      const markers = (gasData.Stations || []).map((station) => {
+        const { Lat, Lon } = station.addr.location;
+        const stationName = station.network.name;
+        const product = (gasData.Products || []).find(
+          (p) => p.stationid === station.id
+        );
+        const price = product ? product.price : 'N/A';
+        const logo = station.network.logo.logouri;
+
+        return {
+          latitude: Lat,
+          longitude: Lon,
+          title: stationName,
+          price,
+          logo,
+        };
+      });
+
+      console.log('Markers Data:', markers);
+
+      navigation.navigate('Map', {
+        latitude: markers[0]?.latitude || 0,
+        longitude: markers[0]?.longitude || 0,
+        markers,
+        radius,
+      });
+    } catch (error) {
+      console.log('Error fetching data:', error);
+      Alert.alert('Error', `Failed to fetch data: ${error.message}`);
+    }
+  };
+
   const handleSelectOption = (option: string) => {
     setSelectedOption(option);
+    if (option !== 'Oraș') {
+      setCityName('');
+    }
   };
 
   const handleFilterButtonPress = () => {
@@ -80,8 +221,12 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
       return;
     }
 
-    if (selectedOption === 'Current Position') {
+    if (selectedOption === 'Poziție curentă') {
       getCurrentLocation();
+    } else if (selectedOption === 'Pin pe hartă') {
+      navigation.navigate('PinMap', { radius, itemId, reset: true });
+    } else if (selectedOption === 'Oraș') {
+      getCurrentTown();
     } else {
       alert(`Selected option: ${selectedOption}`);
       setSelectedOption(null);
@@ -122,7 +267,30 @@ const FilterScreen: React.FC<Props> = ({ route }: any) => {
         renderItem={renderItem}
         keyExtractor={(item) => item}
       />
-
+      {selectedOption === 'Oraș' && (
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Enter city name:</Text>
+          <TextInput
+            style={styles.textInput}
+            value={cityName}
+            onChangeText={setCityName}
+            placeholder="Type city name..."
+          />
+        </View>
+      )}
+      <View style={styles.sliderContainer}>
+        <Text style={styles.sliderLabel}>Radius: {radius} km</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={1}
+          maximumValue={5}
+          step={1}
+          onValueChange={(value) => setRadius(value)}
+          minimumTrackTintColor="#13476c"
+          maximumTrackTintColor="#ccc"
+          thumbTintColor="#13476c"
+        />
+      </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.filterButton}
@@ -165,6 +333,18 @@ const styles = StyleSheet.create({
   selectedRadioButton: { backgroundColor: '#13476c' },
   optionText: { fontSize: 16 },
   selectedOptionText: { fontWeight: 'bold', color: '#13476c' },
+  sliderContainer: {
+    marginVertical: 20,
+    paddingHorizontal: 20,
+  },
+  sliderLabel: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
   buttonContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -183,6 +363,21 @@ const styles = StyleSheet.create({
   filterButtonText: {
     color: '#fff',
     fontSize: 18,
+  },
+  inputContainer: {
+    paddingHorizontal: 20,
+    marginVertical: 10,
+  },
+  inputLabel: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
   },
 });
 

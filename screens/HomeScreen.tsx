@@ -53,14 +53,14 @@ const HomeScreen: React.FC = () => {
     },
   ];
 
-  const handleItemClick = (itemName: string) => {
-    navigation.navigate('Filter', { itemName });
+  const handleItemClick = (itemId: string) => {
+    navigation.navigate('Filter', { itemId });
   };
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
       style={styles.item}
-      onPress={() => handleItemClick(item.name)}
+      onPress={() => handleItemClick(item.id)}
     >
       <Image source={item.logo} style={styles.logo} />
       <Text style={styles.itemText}>{item.name}</Text>
@@ -82,6 +82,12 @@ const HomeScreen: React.FC = () => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
       />
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <Text style={styles.settingsButtonText}>⚙️</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -118,6 +124,18 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 16,
+  },
+  settingsButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    backgroundColor: '#13476c',
+    padding: 10,
+    borderRadius: 25,
+  },
+  settingsButtonText: {
+    color: '#fff',
+    fontSize: 18,
   },
 });
 

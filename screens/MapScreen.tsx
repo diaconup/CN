@@ -3,7 +3,7 @@ import { View, StyleSheet, Text } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 
 const MapScreen = ({ route }: any) => {
-  const { latitude, longitude, itemName } = route.params;
+  const { latitude, longitude, markers, radius } = route.params;
   const [coords, setCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -28,17 +28,27 @@ const MapScreen = ({ route }: any) => {
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: latitude,
-          longitude: longitude,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}
       >
-        <Marker coordinate={{ latitude, longitude }} title={itemName} />
-
+        {markers.map((marker: any, index: number) => (
+          <Marker
+            key={index}
+            coordinate={{
+              latitude: marker.latitude,
+              longitude: marker.longitude,
+            }}
+            title={marker.title}
+            description={`Price: ${marker.price} RON`}
+            image={{ uri: marker.logo }}
+          />
+        ))}
         <Circle
-          center={{ latitude, longitude }}
-          radius={5000}
+          center={coords}
+          radius={radius * 1000}
           strokeColor="rgba(0, 145, 255, 0.5)"
           fillColor="rgba(255, 0, 0, 0.2)"
         />
